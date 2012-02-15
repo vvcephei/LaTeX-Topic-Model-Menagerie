@@ -3,7 +3,7 @@
 \usepackage{algorithmic}
 \usepackage{amstext}
 \usepackage{tikz}
-\usetikzlibrary{arrows,decorations.pathmorphing,fit,positioning}
+\usetikzlibrary{arrows,decorations.pathmorphing,fit,positioning,calc}
 
 \newcommand{\dir}{\text{Dirichlet}}
 \newcommand{\mult}{\text{Multinomial}}
@@ -22,42 +22,50 @@
       post/.style={->,>=stealth',semithick},
     ]
 
-    \node (w-j) [observed] at (0,0) {$w_w$};
-    \node (z-j) [unobserved] at (-1.5,0) {$z_w$};
+    \node (w-w) [observed] at (0,0) {$w_w$};
+    \node (y-d) [observed] at (0,-1.5) {$y_d$};
+    \node (y-prior) [label=above:$\eta\text{,}\sigma^2$] at (1.5,-1.5) {};
+    \filldraw [black] (1.5,-1.5) circle (3pt);
+    \node (z-w) [unobserved] at (-1.5,0) {$z_w$};
     \node (z-prior) [unobserved] at (-3,0) {$\theta_d$};
     \node (z-hyper) [label=above:$\alpha$] at (-4.5,0) {};
     \filldraw [black] (-4.5,0) circle (3pt);
-    \node (w-hyper) [label=above:$\beta$] at (-1.5,1.5) {};
-    \filldraw [black] (-1.5,1.5) circle (3pt);
+    \node (beta) [label=above:$\beta_k$] at (1.5,0) {};
+    \filldraw [black] (1.5,0) circle (3pt);
+    \node (beta-label) at (1.5,0.3) {};
     
     \path
-    (z-j) edge [post] (w-j)
+    (z-w) edge [post] (w-w)
+    (z-w) edge [post] (y-d)
     
     (z-hyper) edge [post] (z-prior)
-    (z-prior) edge [post] (z-j)
+    (y-prior) edge [post] (y-d)
+    (z-prior) edge [post] (z-w)
 
-    (w-hyper) edge [post] (w-j)
+    (beta) edge [post] (w-w)
     ;
 
-    \node [draw,fit=(w-j) (z-prior), inner sep=14pt] (plate-context) {};
+    \node [draw,fit=(beta) (beta-label), inner sep=10pt] (plate-topics) {};
+    \node [above right] at (plate-topics.south west) {$K$};
+    \node [draw,fit=(w-w) (z-prior) (y-d), inner sep=14pt] (plate-context) {};
     \node [above right] at (plate-context.south west) {$D$};
-    \node [draw,fit=(w-j) (z-j), inner sep=10pt] (plate-token) {};
+    \node [draw,fit=(w-w) (z-w), inner sep=10pt] (plate-token) {};
     \node [above right] at (plate-token.south west) {$N$};
 
   \end{tikzpicture}
-  \caption{Plate Diagram of LDA. For more information, see \cite{Blei:2003:LDA:944919.944937} }
+  \caption{Plate Diagram of LDA. For more information, see \cite{Blei:2007} }
   \label{fig:graphical-model}
 \end{figure}
 
 \section{Equations}
-See~\cite{Blei:2003:LDA:944919.944937}.
+See~\cite{Blei:2007}.
 \subsection{Generative Process}
 \begin{algorithmic}[1]
   \FOR{document $d_d$ in corpus $D$}
   \STATE Choose $\theta_d \sim \dir(\alpha) $
   \FOR{position $w$ in $d_d$}
     \STATE Choose a topic $z_w \sim \mult(\theta_d)$
-    \STATE Choose a word $w_w$ from $p(w_w | z_w,\beta)$, a multinomial distribution over words conditioned on the topic and the prior $\beta$.
+    \STATE Choose a word $w_w | z_w,\beta_k \sim \mult(\beta_{z_w})$
   \ENDFOR
   \ENDFOR
 \end{algorithmic}
